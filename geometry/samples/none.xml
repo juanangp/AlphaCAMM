@@ -1,0 +1,6 @@
+<!-- Without sample (setup_noSample.gdml, sources "gas" and "calibration" of Simulation.yaml): the whole gas, without
+     hole. none_placement.xml places nothing -->
+
+<solids>
+    <tube name="gasSolid" startphi="0" deltaphi="360" rmin="0" rmax="VesselRadius-vessel_thickness" z="gas_length" aunit="deg" lunit="mm" />
+</solids>

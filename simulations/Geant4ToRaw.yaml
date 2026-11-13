@@ -1,0 +1,99 @@
+# From the Geant4 events of Simulation.yaml to raw signals, as the data of femclient (legacy
+# alphacamm-analysis/g4ToSignal.rml): diffusion, smearing, shaping, electronics and noise. The output is the
+# input of ../analysis/Analysis.yaml, the same as the data:
+#   restManager --c Geant4ToRaw.yaml --i Run00001_Po210_sample_AlphaCAMM.root
+# (output R00001_RAW_Po210_sample_AlphaCAMM.root).
+# The observables of the Geant4 truth (g4Ana) are kept in the analysis tree (used by CompareSim.yaml).
+
+manager:
+  class: "TRestManager"
+  name: "manager"
+
+  run:
+    class: "TRestRun"
+    inheritInputRun: true
+    runUser: "${ENV:USER}"
+    experimentName: "AlphaCAMM"
+    inputFormat: "Run[runNumber]_[runTag]_[experimentName].root"
+    inputFileName: ""
+    outputFileName: "R[runNumber]_RAW_[runTag]_[experimentName].root"
+    entriesSaved: 0
+
+  readoutManager:
+    class: "TRestDetectorReadoutManager"
+    readouts:
+      - inputFileName: "https://github.com/rest-for-physics-toolkit/rest-common-readouts/releases/download/v1.0/AlphaCAMM.root"
+        instanceName: "AlphaCAMM_Readout"
+        decodingName: "nominal_decoding"
+
+  # The gas, Ar + 1% iC4H10: its transport tables (ArIso.root of rest-common-transport) and the conditions
+  # of the detector (the tables are scaled with E/p to this pressure); charge: its charge response
+  # (ionisation, transport at the drift field and gain)
+  medium:
+    class: "TRestDetectorMedium"
+    name: "Ar99_iC4H10_1"
+    mediumFile: "https://github.com/rest-for-physics-toolkit/rest-common-transport/releases/download/v1.0/ArIso.root"
+    pressure: 1 bar
+    temperature: 293.15
+    charge:
+      wValue: 26.2 eV
+      fanoFactor: 0.2
+      driftField: 140 V/cm
+
+  pipeline:
+    class: "TRestEventProcessManager"
+    name: "pipeline"
+    verbose: "info"
+    eventsToProcess: 0
+    outputEventStorage: true           # every event of the chain (hits, signals, raw signals), for the
+    inputEventStorage: false            # event display; with the Geant4 events of the input. false for both:
+                                       # only the raw signals (smaller files)
+    g4Ana:                             # the Geant4 truth, g4Ana_<selection>_<observable>
+      class: "TRestGeant4AnalysisProcess"
+      observables: ["all"]
+      selections:
+        - name: "gas"                  # every particle in the gas: energy, mean position...
+          volumes: ["gas"]
+          entering: true
+        - name: "alpha"                # only the alphas in the gas: the true track (Entry, End), whatever
+          volumes: ["gas"]             # the other products of the decay (recoil nucleus, gammas, electrons)
+          particles: ["alpha"]
+          entering: true
+    geant4ToHits:
+      class: "TRestGeant4ToDetectorHitsProcess"
+    eDiff:
+      class: "TRestDetectorHitsDriftProcess"
+      maxHits: 2000
+      fluctuations: "fano"
+    smear:
+      class: "TRestDetectorHitsSmearingProcess"
+      energyReference: 6 keV
+      resolutionReference: 20          # FWHM %
+      subtractFano: true               # eDiff already applies the Fano fluctuations
+    hitsToSignal:                      # includes the legacy fiducialization (hits without channel removed)
+      class: "TRestDetectorHitsToSignalProcess"
+#      driftVelocity: 33.4 mm/us      # legacy value; by default the one of the medium at driftField
+      observables: ["NHitsRejected"]
+    signalShaping:                     # electronics response in physical units, before the digitization
+      class: "TRestDetectorSignalShapingProcess"
+      shapingType: "shaperSin"
+      shapingTime: 200 ns              # tuned to the pulses of the data, with recoDriftVelocity (Analysis)
+                                       # (pulse height = gain * charge, independent of the sampling)
+    signalToRaw:
+      class: "TRestDetectorSignalToRawSignalProcess"
+      sampling: 40 ns                  # ADC sampling (512 points --> 20.48 us window, drift up to ~9 us)
+      nPoints: 512
+      mode: "sample"                   # waveforms from signalShaping
+      triggerMode: "firstDeposit"
+      triggerDelay: 4 us               # time of the trigger inside the window
+      gain: 50                         # to be adjusted to the pulse height of the data
+      offset: 250
+      observables: ["TriggerTime", "NSaturatedSignals"]
+    addNoise:
+      class: "TRestRawSignalAddNoiseProcess"
+      noise:
+        - method: "white"
+          amplitude: 10
+        - method: "sin"
+          amplitude: 50
+          period: 55

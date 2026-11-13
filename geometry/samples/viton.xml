@@ -1,0 +1,42 @@
+<!-- Sample: Viton ring (radii 30 to 100 mm, 5 mm thick) on the cathode, with the emitting layer (physical
+     volume "source", used by the "volume" generator of restG4) on the face facing the readout.
+
+     The file of a sample (<name>.xml, entity currentSample of setup.gdml) defines the solid of the gas,
+     gasSolid (with the hole of the sample: the sample is not nested in the gas), and the solids and volumes
+     of the sample; its <name>_placement.xml (entity currentSample_placement) the physvols of the sample
+     inside the World. -->
+
+<define>
+    <constant name="sample_thickness" value="5"/>
+    <constant name="source_thickness" value="0.001"/>
+</define>
+
+<solids>
+    <!-- Body of the sample: the whole thickness but the emitting layer -->
+    <tube name="sampleSolid" startphi="0" deltaphi="360" rmin="30" rmax="100" z="sample_thickness-source_thickness" aunit="deg" lunit="mm" />
+
+    <!-- Thin emitting layer on the face of the sample facing the readout -->
+    <tube name="sourceSolid" startphi="0" deltaphi="360" rmin="30" rmax="100" z="source_thickness" aunit="deg" lunit="mm" />
+
+    <!-- Gas with the hole of the sample. The cutter is 2 mm longer than the sample and sticks out of the gas
+         (cathode side) to avoid coincident faces in the subtraction -->
+    <tube name="gasFullSolid" startphi="0" deltaphi="360" rmin="0" rmax="VesselRadius-vessel_thickness" z="gas_length" aunit="deg" lunit="mm" />
+    <tube name="sampleCutSolid" startphi="0" deltaphi="360" rmin="30" rmax="100" z="sample_thickness+2" aunit="deg" lunit="mm" />
+    <subtraction name="gasSolid">
+        <first ref="gasFullSolid"/>
+        <second ref="sampleCutSolid"/>
+        <position name="GasSub" x="0" y="0" z="0.5*gas_length-0.5*sample_thickness+1" unit="mm"/>
+    </subtraction>
+</solids>
+
+<structure>
+    <volume name="sampleVolume">
+        <materialref ref="G4_VITON"/>
+        <solidref ref="sampleSolid"/>
+    </volume>
+
+    <volume name="sourceVolume">
+        <materialref ref="G4_VITON"/>
+        <solidref ref="sourceSolid"/>
+    </volume>
+</structure>

@@ -1,0 +1,39 @@
+# Configuration of the DAQ event display (TRestDAQViewer), e.g. for the files of femclient (package restDAQ):
+#   restRoot
+#   REST_DAQViewer("analysis/DAQViewer.yaml", "Run00012_..._000.root")
+# The viewer only takes the parameters and these two sections (at any depth, so the YAML of an analysis with
+# restManager can be given instead); each readout is drawn in its own column: spectrum, hit map and signals of
+# the event. The readout files are relative to the directory where restRoot is launched.
+# After editing this file, "Reload Config" in the viewer applies it.
+
+# Binning of the amplitude spectra: spectrumBins, spectrumMin, spectrumMax for all the readouts (default 2048,
+# 0, 100000), and spectrumBins_<instanceName>, spectrumMin_<instanceName>, spectrumMax_<instanceName> for one
+# readout. A parameter not used (e.g. a readout misspelt) is warned.
+parameters:
+  spectrumMax: 500000
+
+# Readouts and their decodings (DAQ ID -> physical channel). Hit map, automatic:
+# - strips on two axes (e.g. the Micromegas): amplitude-weighted mean of the strips of each axis.
+# - otherwise (e.g. the vetoes, a TRestGDMLReadout): XY, XZ and YZ projections of the volumes of the channels,
+#   events with a signal in each one.
+# Without this section, all the signals in a single column without hit map.
+readoutManager:
+  class: "TRestDetectorReadoutManager"
+  readouts:
+    - inputFileName: "https://github.com/rest-for-physics-toolkit/rest-common-readouts/releases/download/v1.0/AlphaCAMM.root"
+      instanceName: "AlphaCAMM_Readout"
+      decodingName: "nominal_decoding"
+
+# Pulse parameters, as in the analysis. The amplitude of a signal is its AmpSgnMaxMethod (at least 2 points
+# over threshold); the spectrum of a readout is the sum of the amplitudes of its signals in the event.
+# Without this section, the default values below.
+pulseAnalysis:
+  class: "TRestRawSignalAnalysisProcess"
+  baselineRange: [5, 55]  # samples
+  baselineOption: ""  # "" (standard deviation), "robust" or "outliers"
+  integralRange: [10, 500]  # samples where the signal is searched
+  pointsThreshold: 2  # sigmas of the baseline for a point over threshold
+  signalThreshold: 5  # sigmas for a signal
+  pointsOverThreshold: 5  # minimum points over threshold of a signal
+  nPointsFlat: 512  # flat points (equal values) that end a pulse; big enough: no effect
+  maxOption: "tripleMaxAverage"  # onlyMax, tripleMax, tripleMaxAverage, gaussFit, landauFit or agetFit

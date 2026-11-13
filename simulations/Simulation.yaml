@@ -1,0 +1,113 @@
+# Simulations of AlphaCAMM (legacy alphacamm-simulations): a single decay (fullChain: false) of the isotope
+# `isotope`, at rest, from the place `source` (independent parameters):
+#   restG4 Simulation.yaml                                       (Po210 from the sample, the default)
+#   restG4 Simulation.yaml --set isotope=Am241 --set source=calibration -n 100000
+#   restG4 Simulation.yaml --set isotope=Rn222 --set source=gas
+# isotope: the Geant4 name of the ion (element and mass number), e.g. Po210 (alpha of 5.3 MeV), Rn222 (5.5
+# MeV), Am241 (5.5 MeV and gamma of 60 keV), Po218 (6.0 MeV), Po214 (7.7 MeV). Geant4 gives the products of
+# the decay (alpha, recoil nucleus, gammas, conversion electrons) with their branching ratios; the daughter
+# is not decayed.
+# source:
+#   sample:  the emitting layer of the sample (volume "source"), geometry with the sample (setup.gdml, the
+#            sample chosen there)
+#   gas:     the volume of the gas (e.g. Rn222 contamination), geometry without sample (setup_noSample.gdml)
+#   calibration: the calibration source (e.g. Am241), a disk of 5 mm diameter at the centre of the cathode
+#            (1 um below it, in the gas), geometry without sample
+#   cathode: the surface of the cathode facing the gas (a disk of 376 mm diameter, 1 um below it, in the
+#            gas), geometry without sample
+# More examples of --set in README.md (section Sources).
+# The geometry is in the detector frame (readout plane at z = 0, cathode at z = 90 mm, electrons drifting
+# towards -z).
+# Output: Run<runNumber>_<isotope>_<source>_AlphaCAMM.root, the input of Geant4ToRaw.yaml.
+
+parameters:
+  isotope: "Po210"
+  source: "sample"
+
+g4Manager:
+  class: "TRestGeant4Manager"
+
+  run:
+    class: "TRestRun"
+    mainDataPath: ""
+    verbose: "info"
+    experimentName: "AlphaCAMM"
+    runType: "simulation"
+    runNumber: "1"
+    runTag: "${PARAM:isotope}_${PARAM:source}"
+    outputFileName: "Run[runNumber]_[runTag]_[experimentName].root"
+    runDescription: ""
+    runUser: "${ENV:USER}"
+
+  geant4Metadata:
+    class: "TRestGeant4Metadata"
+    gdmlFilename:
+      select: "${PARAM:source}"
+      cases: {sample: "../geometry/setup.gdml", default: "../geometry/setup_noSample.gdml"}
+    subEventTimeDelay: 100 us
+    fullChain: false                   # only the decay of the isotope, not that of its daughters
+    nEvents: 10000
+    registerEmptyTracks: false
+    saveAllEvents: false
+    storeTracks: true
+
+    energyRangeStored: [100.0 keV, 10 MeV]
+    activateAllVolumes: false
+    activeVolumes:
+      - name: "gas"
+        chance: 1.0
+        maxStep: 10 um
+        sensitive: true
+
+    generator:
+      select: "${PARAM:source}"
+      source:                          # common to all the places: the ion at rest, it decays
+        particle: "${PARAM:isotope}"
+        angular:
+          type: "isotropic"
+        energy:
+          type: "mono"
+          energy: 0 keV
+      cases:
+        sample:
+          type: "volume"
+          from: "source"
+        gas:
+          type: "volume"
+          from: "gas"
+        calibration:                   # the calibration source: a disk of 5 mm diameter at the centre of the
+          type: "surface"              # cathode, in the gas 1 um below it
+          shape: "circle"
+          size: [2.5 mm, 0, 0]         # radius
+          position: [0, 0, 89.999 mm]
+        cathode:                       # the surface of the cathode facing the gas (e.g. its contamination),
+          type: "surface"              # the whole cathode, in the gas 1 um below it
+          shape: "circle"
+          size: [188 mm, 0, 0]         # radius: VesselRadius - vessel_thickness (dimensions.xml)
+          position: [0, 0, 89.999 mm]
+
+  physicsG4:
+    class: "TRestGeant4PhysicsLists"
+    cutForGamma: 0.01
+    cutForElectron: 2.0
+    cutForPositron: 1.0
+    cutForMuon: 1.0
+    cutForNeutron: 1.0
+    minEnergyRangeProductionCuts: 1.0 keV
+    maxEnergyRangeProductionCuts: 1.0 MeV
+
+    physicsList:
+      - name: "G4EmStandardPhysics_option4"
+      - name: "G4DecayPhysics"
+      - name: "G4RadioactiveDecayPhysics"
+      - name: "G4RadioactiveDecay"
+        option:
+          - name: "ICM"
+            value: "true"
+          - name: "ARM"
+            value: "true"
+      - name: "G4HadronElasticPhysicsHP"
+      - name: "G4IonBinaryCascadePhysics"
+      - name: "G4HadronPhysicsQGSP_BIC_HP"
+      - name: "G4NeutronTrackingCut"
+      - name: "G4EmExtraPhysics"

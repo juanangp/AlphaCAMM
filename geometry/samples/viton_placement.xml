@@ -1,0 +1,13 @@
+<!-- Placement of the Viton ring (viton.xml) inside the World -->
+
+<!-- Body of the sample: z = (85 + source_thickness) to 90 mm, on the cathode -->
+<physvol name="sample">
+    <volumeref ref="sampleVolume"/>
+    <position name="samplePosition" x="0" y="0" z="gas_length-0.5*(sample_thickness-source_thickness)" unit="mm"/>
+</physvol>
+
+<!-- Emitting layer: 85 to (85 + source_thickness) mm, the face of the sample facing the readout -->
+<physvol name="source">
+    <volumeref ref="sourceVolume"/>
+    <position name="sourcePosition" x="0" y="0" z="gas_length-sample_thickness+0.5*source_thickness" unit="mm"/>
+</physvol>

@@ -1,0 +1,18 @@
+<!-- Dimensions of the detector, in mm (common to setup.gdml and setup_noSample.gdml) -->
+
+     <define>
+       <variable name="world_size" value="20000" />
+
+       <!-- vessel definitions -->
+
+        <constant name="vessel_thickness" value="5" />   <!--in mm's -->
+	<constant name="VesselRadius" value="193" />
+	<constant name="VesselLength" value="110" />
+	<constant name="gas_length" value="90" />
+
+    	<constant name="readout_thickness" value="1"/>
+        <constant name="readout_size" value="250"/>
+
+        <constant name="cathode_thickness" value="5"/>
+
+    </define>

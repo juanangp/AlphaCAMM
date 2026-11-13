@@ -1,0 +1,109 @@
+<solids>
+    <box name="WorldSolid" x="world_size" y="world_size" z="world_size" lunit="mm"/>
+
+    <tube name="vesselSolid" startphi="0" deltaphi="360" rmin="VesselRadius-vessel_thickness" rmax="VesselRadius" z="VesselLength" aunit="deg" lunit="mm" />
+
+    <tube name="coverVesselBottomSolid" startphi="0" deltaphi="360" rmin="0" rmax="VesselRadius-vessel_thickness" z="vessel_thickness" aunit="deg" lunit="mm" />
+
+    <box name="readoutSolid" x="readout_size" y="readout_size" z="readout_thickness" lunit="mm"/>
+
+    <tube name="coverVesselTopSolid1" startphi="0" deltaphi="360" rmin="0" rmax="VesselRadius-vessel_thickness" z="vessel_thickness" aunit="deg" lunit="mm" />
+
+    <tube name="cathodeSolid" startphi="0" deltaphi="360" rmin="0" rmax="VesselRadius-vessel_thickness" z="5" aunit="deg" lunit="mm" />
+
+    <!-- Readout cover with its cavity on the inner face (facing the gas, +z) -->
+    <subtraction name="coverVesselTopSolid">
+        <first ref="coverVesselTopSolid1"/>
+        <second ref="readoutSolid"/>
+        <position name="TopSub" x="0" y="0" z="vessel_thickness*0.5-readout_thickness*0.5" unit="mm"/>
+    </subtraction>
+</solids>
+
+<structure>
+
+    <!-- {{{ Volumes definition (material and solid assignment) -->
+
+    <volume name="gasVolume">
+        <materialref ref="Argon2%Isobutane1bar"/>
+        <solidref ref="gasSolid"/>
+    </volume>
+
+    <volume name="vesselVolume">
+        <materialref ref="StainlessSteel"/>
+        <solidref ref="vesselSolid"/>
+    </volume>
+
+    <volume name="coverVesselBottomVolume">
+        <materialref ref="StainlessSteel"/>
+        <solidref ref="coverVesselBottomSolid"/>
+    </volume>
+
+    <volume name="coverVesselTopVolume">
+        <materialref ref="StainlessSteel"/>
+        <solidref ref="coverVesselTopSolid"/>
+    </volume>
+
+    <volume name="cathodeVolume">
+        <materialref ref="Copper"/>
+        <solidref ref="cathodeSolid"/>
+    </volume>
+
+    <volume name="readoutVolume">
+        <materialref ref="Copper"/>
+        <solidref ref="readoutSolid"/>
+    </volume>
+
+    <!-- }}} -->
+
+    <!-- {{{ Physical volume definition (volume and position assignment) -->
+    <!-- All the volumes are direct daughters of the World: no nesting -->
+
+    <volume name="World">
+        <materialref ref="Air"/>
+        <solidref ref="WorldSolid"/>
+
+        <physvol name="vessel">
+            <volumeref ref="vesselVolume"/>
+            <position name="vesselPosition" x="0" y="0" z="0.5*VesselLength" unit="mm"/>
+        </physvol>
+
+        <!-- Gas: z = 0 to 90 mm. Its solid (gasSolid, with the hole of the sample if any) is defined in the
+             file of the sample (entity currentSample of setup.gdml) -->
+        <physvol name="gas">
+            <volumeref ref="gasVolume"/>
+            <position name="gasPosition" x="0" y="0" z="0.5*gas_length" unit="mm"/>
+        </physvol>
+
+        <!-- Readout cover: z = -5 to 0 mm -->
+        <physvol name="coverVesselTop">
+            <volumeref ref="coverVesselTopVolume"/>
+            <position name="coverTopPosition" x="0" y="0" z="-0.5*vessel_thickness" unit="mm"/>
+        </physvol>
+
+        <!-- Cover on the cathode side: z = 105 to 110 mm -->
+        <physvol name="coverVesselBottom">
+            <volumeref ref="coverVesselBottomVolume"/>
+            <position name="coverBottomPosition" x="0" y="0" z="VesselLength-0.5*vessel_thickness" unit="mm"/>
+        </physvol>
+
+        <!-- Cathode: z = 90 to 95 mm, just above the gas -->
+        <physvol name="cathode">
+            <volumeref ref="cathodeVolume"/>
+            <position name="cathodePosition" x="0" y="0" z="gas_length+2.5" unit="mm"/>
+        </physvol>
+
+        <!-- The sample: its physvols, from the placement file of the sample (entity currentSample_placement
+             of setup.gdml); empty without sample -->
+        &currentSample_placement;
+
+        <!-- Readout: z = -1 to 0 mm, inside the cavity of the cover (readout plane at z = 0, electrons drifting towards -z) -->
+        <physvol name="readout">
+            <volumeref ref="readoutVolume"/>
+            <position name="readoutPosition" x="0" y="0" z="-0.5*readout_thickness" unit="mm"/>
+        </physvol>
+
+    </volume>
+    <!-- }}} -->
+
+</structure>
+

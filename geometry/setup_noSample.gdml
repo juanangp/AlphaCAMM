@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+
+
+<!DOCTYPE gdml [
+<!ENTITY geometry SYSTEM "geometry.gdml">
+<!ENTITY materials SYSTEM "https://github.com/rest-for-physics-toolkit/rest-common-materials/releases/download/v1.0/materials.xml">
+<!ENTITY dimensions SYSTEM "dimensions.xml">
+<!-- Geometry without sample (sources "gas" and "calibration" of Simulation.yaml; with sample: setup.gdml): the
+     whole gas and nothing placed -->
+<!ENTITY currentSample SYSTEM "samples/none.xml">
+<!ENTITY currentSample_placement SYSTEM "samples/none_placement.xml">
+]>
+
+
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+
+    &dimensions;
+
+    &materials;
+
+    &currentSample;
+
+    &geometry;
+
+    <setup name="Default" version="1.0">
+        <world ref="World"/>
+    </setup>
+
+</gdml>

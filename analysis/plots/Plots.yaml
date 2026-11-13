@@ -1,0 +1,125 @@
+# Plots of the line analysis of AlphaCAMM (legacy alphacamm-analysis/plots/summary.rml, with the length
+# and the angle versus the length), with TRestAnalysisPlot:
+#   restManager --c Plots.yaml --i R00001_ANA_Po210_sample_AlphaCAMM.root
+#   restManager --c Plots.yaml --i "R*_ANA_*_AlphaCAMM.root"     (several files)
+# Observables of TRestTrackLineAnalysisProcess "tckLineAna" (../Analysis.yaml), branches
+# tckLineAna_<observable>.
+# Downwards is 1 (downwards), -1 (upwards) or 0 (unknown, no Z or same Z): legacy !downwards also included
+# the unknown ones, here they are in neither spectrum.
+
+manager:
+  class: "TRestManager"
+  name: "alphaAnaVis"
+
+  downwards:
+    class: "TRestCut"
+    conditions:
+      downwards: "tckLineAna_Downwards > 0"
+
+  upwards:
+    class: "TRestCut"
+    conditions:
+      upwards: "tckLineAna_Downwards < 0"
+
+  fiducial:
+    class: "TRestCut"
+    conditions:
+      origin: "tckLineAna_OriginX*tckLineAna_OriginX + tckLineAna_OriginY * tckLineAna_OriginY < 10000"
+      energy: "tckLineAna_Energy > 1000 "
+
+  restplot:
+    class: "TRestAnalysisPlot"
+#    outputFileName: "R[runNumber]_Plots.root"
+    cuts:  ["fiducial"]
+    previewPlot: true
+    canvasSize: [3200, 2800]
+    canvasDivisions: [3, 3]
+    panels:
+      - textSize: 0.06
+        labels:
+          - {text: "Run number: {run.runNumber}", position: [0.1, 0.88]}
+          - {text: "Run tag: {run.runTag}", position: [0.1, 0.78]}
+          - {text: "Run starts: {startTime}", position: [0.1, 0.68]}
+          - {text: "Run ends: {endTime}", position: [0.1, 0.58]}
+          - {text: "Entries: {entries}", position: [0.1, 0.48]}
+          - {text: "Run duration: {runLength|%.2f} hours", position: [0.1, 0.38]}
+          - {text: "Mean rate: {meanRate|%.3g} Hz", position: [0.1, 0.28]}
+          - {text: "Mean angle: {mean(tckLineAna_Angle)} rad", position: [0.1, 0.18]}
+    plots:
+      - name: "TrackOrigin"
+        xLabel: "X [mm]"
+        yLabel: "Y [mm]"
+        option: "colz"
+        variables:
+          - {name: "tckLineAna_OriginX", range: [-129.6, 129.6], nBins: 259}
+          - {name: "tckLineAna_OriginY", range: [-129.6, 129.6], nBins: 259}
+
+      - name: "TrackEnd"
+        xLabel: "X [mm]"
+        yLabel: "Y [mm]"
+        option: "colz"
+        variables:
+          - {name: "tckLineAna_EndX", range: [-129.6, 129.6], nBins: 259}
+          - {name: "tckLineAna_EndY", range: [-129.6, 129.6], nBins: 259}
+
+      - name: "Spectra"
+        xLabel: "Amplitude (ADC)"
+        yLabel: "Counts"
+        legend: true
+        histos:
+          - name: "Downwards"
+            variables: [{name: "tckLineAna_Energy", range: [0, 2000000], nBins: 200}]
+            cuts: ["downwards"]
+          - name: "Upwards"
+            variables: [{name: "tckLineAna_Energy", range: [0, 2000000], nBins: 200}]
+            cuts: ["upwards"]
+            lineColor: "red"
+
+      - name: "TrackLengthEn"
+        xLabel: "Length (mm)"
+        yLabel: "Amplitude (ADC)"
+        option: "colz"
+        variables:
+          - {name: "tckLineAna_Length", range: [0, 100], nBins: 200}
+          - {name: "tckLineAna_Energy", range: [0, 2000000], nBins: 200}
+
+      - name: "TrackLength"
+        xLabel: "Length (mm)"
+        yLabel: "Counts"
+        legend: true
+        histos:
+          - name: "Downwards"
+            variables: [{name: "tckLineAna_Length", range: [0, 100], nBins: 200}]
+            cuts: ["downwards"]
+          - name: "Upwards"
+            variables: [{name: "tckLineAna_Length", range: [0, 100], nBins: 200}]
+            cuts: ["upwards"]
+            lineColor: "red"
+
+      - name: "TrackAngle"
+        xLabel: "Angle (rad)"
+        yLabel: "Counts"
+        variables: [{name: "tckLineAna_Angle", range: [0, 3.142], nBins: 100}]
+
+      - name: "TrackAngleLength"
+        xLabel: "Angle (rad)"
+        yLabel: "Length (mm)"
+        option: "colz"
+        variables:
+          - {name: "tckLineAna_Angle", range: [0, 3.142], nBins: 200}
+          - {name: "tckLineAna_Length", range: [0, 100], nBins: 200}
+
+      - name: "Rate"
+        xLabel: "Date/time"
+        yLabel: "Rate (Hz)"
+        legend: true
+        scale: "binSize"
+        timeDisplay: true
+        histos:
+          - name: "Downwards"
+            variables: [{name: "timeSeconds + 1e-9*timeNanoSecs", nBins: 100}]  # time with nanoseconds
+            cuts: ["downwards"]
+          - name: "Upwards"
+            variables: [{name: "timeSeconds + 1e-9*timeNanoSecs", nBins: 100}]  # time with nanoseconds
+            cuts: ["upwards"]
+            lineColor: "red"

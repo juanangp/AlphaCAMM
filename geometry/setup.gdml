@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+
+
+<!DOCTYPE gdml [
+<!ENTITY geometry SYSTEM "geometry.gdml">
+<!ENTITY materials SYSTEM "https://github.com/rest-for-physics-toolkit/rest-common-materials/releases/download/v1.0/materials.xml">
+<!ENTITY dimensions SYSTEM "dimensions.xml">
+<!-- Geometry with the sample (source "sample" of Simulation.yaml; without sample: setup_noSample.gdml). The
+     sample simulated is given by two symbolic links to the files of the sample in samples/ (see README.md):
+       currentSample.xml           -> samples/viton.xml            (solids and volumes, with the gas solid)
+       currentSample_placement.xml -> samples/viton_placement.xml  (its placement in the World) -->
+<!ENTITY currentSample SYSTEM "currentSample.xml">
+<!ENTITY currentSample_placement SYSTEM "currentSample_placement.xml">
+]>
+
+
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+
+    &dimensions;
+
+    &materials;
+
+    &currentSample;
+
+    &geometry;
+
+    <setup name="Default" version="1.0">
+        <world ref="World"/>
+    </setup>
+
+</gdml>

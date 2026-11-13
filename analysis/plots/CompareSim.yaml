@@ -1,0 +1,109 @@
+# Reconstructed alpha tracks of a simulation compared with the Geant4 truth (legacy macro CompareSim.C), with
+# the observables of the analysis file (../Analysis.yaml), which keeps the Geant4 truth of the simulation:
+#   restManager --c CompareSim.yaml --i R00001_ANA_Po210_sample_AlphaCAMM.root
+# Truth (TRestGeant4AnalysisProcess "g4Ana" of ../../simulations/Geant4ToRaw.yaml, selection "alpha": only the
+# alphas in the gas, with entering):
+#   origin: the first hit of the alpha in the gas (g4Ana_alpha_EntryX/Y): where it enters the gas (source
+#           sample) or where it starts (sources gas and calibration, created in the gas:
+#           g4Ana_alpha_NEntering = 0);
+#   end:    its last hit in the gas (g4Ana_alpha_EndX/Y);
+#   angle:  the polar angle of the true track from its end to its origin (g4Ana_alpha_End to _Entry), as
+#           tckLineAna_Angle (the alphas from the sample go towards the readout, -z). Not the direction of
+#           the primary: the primary is the ion that decays, at rest.
+# Only X and Y: the reconstructed Z is the drift time from the trigger. Difference with legacy: the end
+# differences used the origin by mistake.
+# Fiducial cut, the same as Plots.yaml: reconstructed origin within 100 mm of the centre and energy > 1000.
+
+manager:
+  class: "TRestManager"
+  name: "compareSim"
+
+  fiducial:
+    class: "TRestCut"
+    conditions:
+      origin: "tckLineAna_OriginX*tckLineAna_OriginX + tckLineAna_OriginY * tckLineAna_OriginY < 10000"
+      energy: "tckLineAna_Energy > 1000 "
+
+  restplot:
+    class: "TRestAnalysisPlot"
+    cuts: ["fiducial"]
+    previewPlot: true
+    canvasSize: [2400, 2400]
+    canvasDivisions: [3, 3]
+    panels:
+      - textSize: 0.06
+        labels:
+          - {text: "Run number: {run.runNumber}", position: [0.1, 0.8]}
+          - {text: "Run tag: {run.runTag}", position: [0.1, 0.7]}
+          - {text: "Entries: {entries}", position: [0.1, 0.6]}
+    plots:
+      - name: "OriginDiffX"
+        xLabel: "X_{rec} - X_{G4} origin [mm]"
+        yLabel: "Counts"
+        variables:
+          - name: "tckLineAna_OriginX - g4Ana_alpha_EntryX"
+            range: [-10, 10]
+            nBins: 100
+
+      - name: "OriginDiffY"
+        xLabel: "Y_{rec} - Y_{G4} origin [mm]"
+        yLabel: "Counts"
+        variables:
+          - name: "tckLineAna_OriginY - g4Ana_alpha_EntryY"
+            range: [-10, 10]
+            nBins: 100
+
+      - name: "OriginDistance"
+        xLabel: "XY distance rec - G4 origin [mm]"
+        yLabel: "Counts"
+        variables:
+          - name: "hypot(tckLineAna_OriginX - g4Ana_alpha_EntryX, tckLineAna_OriginY - g4Ana_alpha_EntryY)"
+            range: [0, 10]
+            nBins: 100
+
+      - name: "EndDiffX"
+        xLabel: "X_{rec} - X_{G4} end [mm]"
+        yLabel: "Counts"
+        variables:
+          - {name: "tckLineAna_EndX - g4Ana_alpha_EndX", range: [-10, 10], nBins: 100}
+
+      - name: "EndDiffY"
+        xLabel: "Y_{rec} - Y_{G4} end [mm]"
+        yLabel: "Counts"
+        variables:
+          - {name: "tckLineAna_EndY - g4Ana_alpha_EndY", range: [-10, 10], nBins: 100}
+
+      - name: "EndDistance"
+        xLabel: "XY distance rec - G4 end [mm]"
+        yLabel: "Counts"
+        variables:
+          - name: "hypot(tckLineAna_EndX - g4Ana_alpha_EndX, tckLineAna_EndY - g4Ana_alpha_EndY)"
+            range: [0, 10]
+            nBins: 100
+
+      - name: "Angle"
+        xLabel: "Angle (rad)"
+        yLabel: "Counts"
+        legend: true
+        histos:
+          - name: "Reconstructed"
+            variables: [{name: "tckLineAna_Angle", range: [0, 3.1416], nBins: 100}]
+          - name: "Geant4"
+            variables:
+              - name: >-
+                  atan2(hypot(g4Ana_alpha_EntryX - g4Ana_alpha_EndX, g4Ana_alpha_EntryY - g4Ana_alpha_EndY),
+                  g4Ana_alpha_EntryZ - g4Ana_alpha_EndZ)
+                range: [0, 3.1416]
+                nBins: 100
+            lineColor: "red"
+
+      - name: "AngleDiff"
+        xLabel: "Angle_{rec} - Angle_{G4} (rad)"
+        yLabel: "Counts"
+        variables:
+          - name: >-
+              tckLineAna_Angle -
+              atan2(hypot(g4Ana_alpha_EntryX - g4Ana_alpha_EndX, g4Ana_alpha_EntryY - g4Ana_alpha_EndY),
+              g4Ana_alpha_EntryZ - g4Ana_alpha_EndZ)
+            range: [-3.1416, 3.1416]
+            nBins: 500

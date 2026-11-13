@@ -1,0 +1,78 @@
+# Reconstruction and analysis of the alpha tracks (legacy alphacamm-analysis/alphaAna.rml), from raw
+# signals: the data of femclient or a simulation (../simulations/Geant4ToRaw.yaml):
+#   restManager --c Analysis.yaml --i R00001_RAW_Po210_sample_AlphaCAMM.root   # R00001_ANA_..._AlphaCAMM.root
+#   restManager --c Analysis.yaml --i "Run00012_<tag>_AlphaCAMM_background_*.root"  # data, all the subruns
+# The observables of the input file (e.g. the Geant4 truth of a simulation) are copied to the analysis tree.
+# Reconstruction: --set recoDriftVelocity=... --set intWindow=... (see signalToHits)
+parameters:
+  recoDriftVelocity: 16.5 mm/us
+  intWindow: 80 ns
+
+manager:
+  class: "TRestManager"
+  name: "manager"
+
+  run:
+    class: "TRestRun"
+    inheritInputRun: true            # run number, tag... from the TRestRun of the input file
+    runUser: "${ENV:USER}"
+    inputFileName: ""
+    outputFileName: "R[runNumber]_ANA_[runTag]_[experimentName].root"
+    entriesSaved: 0
+
+  readoutManager:
+    class: "TRestDetectorReadoutManager"
+    readouts:
+      - inputFileName: "https://github.com/rest-for-physics-toolkit/rest-common-readouts/releases/download/v1.0/AlphaCAMM.root"
+        instanceName: "AlphaCAMM_Readout"
+        decodingName: "nominal_decoding"
+
+  pipeline:
+    class: "TRestEventProcessManager"
+    name: "pipeline"
+    verbose: "info"
+    eventsToProcess: 0
+    outputEventStorage: true           # every event of the chain (signals, hits, tracks), for the event
+    inputEventStorage: false            # display; with the events of the input. false for both: only the
+                                       # tracks of the last process (smaller files)
+    rawToSignal:
+      class: "TRestRawToDetectorSignalProcess"
+      sampling: 40ns
+      triggerStarts: 0
+      gain: 1
+      threshold: 300
+      zeroSuppression: true
+      baselineRange: [1, 80]
+      integralRange: [81, 512]
+      pointsThreshold: 5
+      signalThreshold: 7
+      pointsOverThreshold: 7
+      observables:
+        - "NSignalsRejected"
+    signalToHits:
+      class: "TRestDetectorSignalToHitsProcess"
+      # Effective drift velocity, not the one of the medium (21.7 mm/us at 140 V/cm, used by hitsToSignal):
+      # each strip gives hits along the whole shaped pulse (~0.7 us with shaperSin 200 ns, the shapingTime
+      # of Geant4ToRaw.yaml), a false Z extent of pulse * velocity that tilts the horizontal tracks. A lower
+      # velocity reduces it, but also the real Z of the vertical tracks: 16.5 mm/us tuned with
+      # CompareSim.yaml together with shapingTime 200 ns, the narrowest AngleDiff centred at 0 (to be tuned
+      # again if shapingTime changes). intWindow: a multiple of the sampling (40 ns) with
+      # intWindow * driftVelocity (the Z step of the hits, 80 ns * 16.5 mm/us = 1.3 mm) between the strip
+      # pitch (0.96 mm) and clusterDistance (3 mm)
+      driftVelocity: "${PARAM:recoDriftVelocity}"
+      method: "intWindow"
+      intWindow: "${PARAM:intWindow}"
+    hitsToTrack:
+      class: "TRestDetectorHitsToTrackProcess"
+      clusterDistance: 3mm             # larger than the Z step of the hits (intWindow * driftVelocity)
+    trackLinearization:
+      class: "TRestTrackLinearizationProcess"
+      maxNodes: 6
+      fixBoundaries: false
+    tckLineAna:
+      class: "TRestTrackLineAnalysisProcess"
+      projections: ["XZ", "YZ"]
+      lineAnaMethod: "default"
+      observables:
+        - "all"
+
