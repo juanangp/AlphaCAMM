@@ -3,7 +3,7 @@
 #   restManager --c Analysis.yaml --i R00001_RAW_Po210_sample_AlphaCAMM.root   # R00001_ANA_..._AlphaCAMM.root
 #   restManager --c Analysis.yaml --i "Run00012_<tag>_AlphaCAMM_background_*.root"  # data, all the subruns
 # The observables of the input file (e.g. the Geant4 truth of a simulation) are copied to the analysis tree.
-# Reconstruction: --set recoDriftVelocity=... --set intWindow=... (see signalToHits)
+# Reconstruction: --set recoDriftVelocity=... --set intWindow=... (see signalToHits and timeProjection)
 parameters:
   recoDriftVelocity: 16.5 mm/us
   intWindow: 80 ns
@@ -51,7 +51,8 @@ manager:
         - "NSignalsRejected"
     signalToHits:
       class: "TRestDetectorSignalToHitsProcess"
-      # Effective drift velocity, not the one of the medium (21.7 mm/us at 140 V/cm, used by hitsToSignal):
+      # timeProjection: effective drift velocity, not the one of the medium (21.7 mm/us at 140 V/cm,
+      # used by eDiff of the simulation):
       # each strip gives hits along the whole shaped pulse (~0.7 us with shaperSin 200 ns, the shapingTime
       # of Geant4ToRaw.yaml), a false Z extent of pulse * velocity that tilts the horizontal tracks. A lower
       # velocity reduces it, but also the real Z of the vertical tracks: 16.5 mm/us tuned with
@@ -59,9 +60,11 @@ manager:
       # again if shapingTime changes). intWindow: a multiple of the sampling (40 ns) with
       # intWindow * driftVelocity (the Z step of the hits, 80 ns * 16.5 mm/us = 1.3 mm) between the strip
       # pitch (0.96 mm) and clusterDistance (3 mm)
-      driftVelocity: "${PARAM:recoDriftVelocity}"
       method: "intWindow"
       intWindow: "${PARAM:intWindow}"
+    timeProjection:
+      class: "TRestDetectorHitsTimeProjectionProcess"
+      driftVelocity: "${PARAM:recoDriftVelocity}"
     hitsToTrack:
       class: "TRestDetectorHitsToTrackProcess"
       clusterDistance: 3mm             # larger than the Z step of the hits (intWindow * driftVelocity)

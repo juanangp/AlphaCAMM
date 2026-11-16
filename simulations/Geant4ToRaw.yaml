@@ -61,8 +61,8 @@ manager:
           entering: true
     geant4ToHits:
       class: "TRestGeant4ToDetectorHitsProcess"
-    eDiff:
-      class: "TRestDetectorHitsDriftProcess"
+    eDiff:                             # electrons on the readout plane at their arrival time (drift velocity
+      class: "TRestDetectorHitsDriftProcess"   # of the medium at driftField; legacy value 33.4 mm/us)
       maxHits: 2000
       fluctuations: "fano"
     smear:
@@ -70,9 +70,8 @@ manager:
       energyReference: 6 keV
       resolutionReference: 20          # FWHM %
       subtractFano: true               # eDiff already applies the Fano fluctuations
-    hitsToSignal:                      # includes the legacy fiducialization (hits without channel removed)
+    hitsToSignal:                      # hits without channel removed (with eDiff, the legacy fiducialization)
       class: "TRestDetectorHitsToSignalProcess"
-#      driftVelocity: 33.4 mm/us      # legacy value; by default the one of the medium at driftField
       observables: ["NHitsRejected"]
     signalShaping:                     # electronics response in physical units, before the digitization
       class: "TRestDetectorSignalShapingProcess"

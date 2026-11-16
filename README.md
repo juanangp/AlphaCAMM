@@ -64,7 +64,7 @@ Tuned parameters, to be tuned together (a change of one needs the others again):
 | Parameter | Value | Where | Tuned with |
 |---|---|---|---|
 | `shapingTime` (shaperSin) | 200 ns | `signalShaping` of `simulations/Geant4ToRaw.yaml` | the pulses of the data |
-| `recoDriftVelocity` | 16.5 mm/us | parameter of `analysis/Analysis.yaml` (`signalToHits`) | `CompareSim.yaml`: the narrowest `AngleDiff` centred at 0 |
+| `recoDriftVelocity` | 16.5 mm/us | parameter of `analysis/Analysis.yaml` (`timeProjection`) | `CompareSim.yaml`: the narrowest `AngleDiff` centred at 0 |
 | `intWindow` | 80 ns | parameter of `analysis/Analysis.yaml` (`signalToHits`) | Z step of the hits (`intWindow` * `recoDriftVelocity` = 1.3 mm) between the strip pitch (0.96 mm) and `clusterDistance` (3 mm) |
 
 The reconstruction velocity is lower than that of the gas (21.7 mm/us at 140 V/cm, used by the simulation):
